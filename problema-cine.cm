@@ -1,0 +1,53 @@
+typedef semaphore sem;
+sem filaE = 0, filaP = 0, contAE = 1, contAP = 1, servEn = 0, servPi = 0; 
+sem pEn = 0, pPi = 0;
+int contador; 
+void cliente(int ID) {
+	p(filaE); 
+	cout<<"Llega cliente "<<ID<<" pide atencion" <<endl; 
+	v(servEn); 
+	p(pEn); 
+	cout<<"Cliente "<<ID<<" obtiene entrada" <<endl;
+	v(filaE);
+	p(filaP); 
+	cout<<"Cliente "<<ID<<" solicita pipocas" <<endl;
+	v(servPi); 
+	p(pPi); 
+	cout<<"Cliente "<<ID<<" obtiene sus pipocas y se va a su sala"<<endl;
+	v(filaP);
+}
+void dEntradas(int ID) {
+	int j;
+	v(filaE);
+	while (1) {
+		p(contAE);
+			if(contador<=0) {j = 1;}
+			contador--;
+		v(contAE);  
+		if (j==0) {
+			p(servEn); 
+			cout<<"Dispensador de entradas "<<ID<<" entrega una entrada."<<endl;
+			v(pEn);
+		} else return;
+	}
+}
+void dPipocas(int ID) {
+	int j; 
+	v(filaP);
+	while (j<3) {
+		p(servPi); 
+		cout<<"Dispensador de pipocas "<<ID<<" prepara pipocas"<<endl;
+		v(pPi); 
+		j++;
+	}
+}
+void main() {
+	contador = 9;
+	cobegin {
+		cliente(1); cliente(5); cliente(4); 
+		cliente(2); cliente(3); cliente(6);
+		cliente(0); cliente(8); cliente(9);
+		dEntradas(1); dEntradas(2); dEntradas(3);
+		dPipocas(1); dPipocas(2); dPipocas(3);
+	}
+}
