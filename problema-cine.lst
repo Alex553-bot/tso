@@ -1,56 +1,97 @@
 BACI System: C-- to PCODE Compiler in C, 11:30   1 Oct 2012
-Source file: problema-cine.cm  Sun Mar 26 18:43:38 2023
+Source file: problema-cine.cm  Mon Mar 27 15:55:06 2023
  line  pc
    1    0  typedef semaphore sem;
-   2    0  sem filaE = 0, filaP = 0, contAE = 1, contAP = 1, servEn = 0, servPi = 0; 
-   3    0  sem pEn = 0, pPi = 0;
-   4    0  int contador; 
-   5    0  void cliente(int ID) {
-   6    0  	p(filaE); 
-   7    2  	cout<<"Llega cliente "<<ID<<" pide atencion" <<endl; 
-   8    7  	v(servEn); 
-   9    9  	p(pEn); 
-  10   11  	cout<<"Cliente "<<ID<<" obtiene entrada" <<endl;
-  11   16  	v(filaE);
-  12   18  	p(filaP); 
-  13   20  	cout<<"Cliente "<<ID<<" solicita pipocas" <<endl;
-  14   25  	v(servPi); 
-  15   27  	p(pPi); 
-  16   29  	cout<<"Cliente "<<ID<<" obtiene sus pipocas y se va a su sala"<<endl;
-  17   34  	v(filaP);
-  18   36  }
-  19   37  void dEntradas(int ID) {
-  20   37  	int j;
-  21   37  	v(filaE);
-  22   39  	while (1) {
-  23   41  		p(contAE);
-  24   43  			if(contador<=0) {j = 1;}
-  25   50  			contador--;
-  26   55  		v(contAE);  
-  27   57  		if (j==0) {
-  28   61  			p(servEn); 
-  29   63  			cout<<"Dispensador de entradas "<<ID<<" entrega una entrada."<<endl;
-  30   68  			v(pEn);
-  31   70  		} else return;
-  32   72  	}
-  33   73  }
-  34   74  void dPipocas(int ID) {
-  35   74  	int j; 
-  36   74  	v(filaP);
-  37   76  	while (j<3) {
-  38   80  		p(servPi); 
-  39   82  		cout<<"Dispensador de pipocas "<<ID<<" prepara pipocas"<<endl;
-  40   87  		v(pPi); 
-  41   89  		j++;
-  42   94  	}
-  43   95  }
-  44   96  void main() {
-  45   97  	contador = 9;
-  46  100  	cobegin {
-  47  101  		cliente(1); cliente(5); cliente(4); 
-  48  113  		cliente(2); cliente(3); cliente(6);
-  49  125  		cliente(0); cliente(8); cliente(9);
-  50  137  		dEntradas(1); dEntradas(2); dEntradas(3);
-  51  149  		dPipocas(1); dPipocas(2); dPipocas(3);
-  52  161  	}
-  53  162  }
+   2    0  sem contador = 1, cont2 = 1;
+   3    0  // interaccion de entrada: 
+   4    0  sem fila = 0, entrada = 0, iEntrada = 0;
+   5    0  // interaccion de pipocas: 
+   6    0  sem fila2 = 0, pipocas = 0, iPipocas = 0, llama = 0; 
+   7    0  // ordenamiento:
+   8    0  sem mutex = 1, turno = 1;
+   9    0  int global, esperando, actual = 1, esp2;
+  10    0  void cliente(int ID) {
+  11    0  	int j, pos;
+  12    0  	p(contador); 
+  13    2  	 esperando++;
+  14    7  	v(contador);
+  15    9  	p(fila); 
+  16   11  	 cout<<"El cliente "<<ID<<" pide una entrada."<<endl; 
+  17   16  	 v(entrada); 
+  18   18  	 p(iEntrada); 
+  19   20  	 p(mutex);
+  20   22  	  global++;
+  21   27  	  pos = global;
+  22   30  	 v(mutex); 
+  23   32  	 cout<<"El cliente "<<ID<<" se le asigna la entrada "<<pos<<endl;
+  24   39  	v(fila);
+  25   41  	cout<<"Cliente "<<ID<<" espera su turno"<<endl;
+  26   46  	p(cont2); 
+  27   48  	 esp2++;
+  28   53  	v(cont2);
+  29   55  	while (1) {
+  30   57  		p(turno); 
+  31   59  		 if (pos<=actual) j = 1;
+  32   66  		v(turno); 
+  33   68  		if (j==1) {
+  34   72  			p(fila2);
+  35   74  			v(pipocas);
+  36   76  			p(llama);
+  37   78  			 cout<<"Cliente "<<ID<<" pide palomitas."<<endl;
+  38   83  			 
+  39   83  			 p(iPipocas); 
+  40   85  			  cout<<"Cliente "<<ID<<" recibe sus pipocas."<<endl;
+  41   90  			v(fila2);
+  42   92  			break;
+  43   93  		} 
+  44   93  	}
+  45   94  	cout<<"Cliente "<<ID<<" se va a su sala"<<endl;
+  46   99  }
+  47  100  void dEntradas(int ID) {
+  48  100  	int j; 
+  49  100  	v(fila);
+  50  102  	while (1) {
+  51  104  		p(contador); 
+  52  106  		 if (esperando>0) j = 1;
+  53  113  		v(contador);
+  54  115  		if (j==1) {
+  55  119  			p(entrada); 
+  56  121  			 cout<<"Dispensador de entradas "<<ID<<" atiende a cliente."<<endl;
+  57  126  			 v(iEntrada); 
+  58  128  			 p(contador); 
+  59  130  			  esperando--;
+  60  135  			 v(contador);
+  61  137  			 j = 0;
+  62  140  		} //else // no hay clientes para atender.
+  63  140  	} 
+  64  141  }
+  65  142  void dPipocas(int ID) {
+  66  142  	int j;
+  67  142  	v(fila2);
+  68  144  	while (1) {
+  69  146  		p(cont2); 
+  70  148  		 if (esp2>0) j = 1;
+  71  155  		v(cont2);
+  72  157  		if (j==1) {
+  73  161  			p(pipocas); 
+  74  163  			p(turno);
+  75  165  			 cout<<"Dispensador de pipocas "<<ID<<" llama al turno "<<actual<<endl;
+  76  172  			 actual++;
+  77  177  			v(turno); 
+  78  179  			v(llama);
+  79  181  			cout<<"Dispensador de pipocas "<<ID<<" atiende a cliente."<<endl;
+  80  186  			v(iPipocas);
+  81  188  			p(cont2); 
+  82  190  			 esp2--;
+  83  195  			v(cont2);
+  84  197  		}
+  85  197  	}
+  86  198  }
+  87  199  void main() {
+  88  200  	int aux;
+  89  200  	cobegin {
+  90  201  		for (aux=0; aux<3; aux++) cliente(aux);
+  91  220  		for (aux = 5; aux<7; aux++) dEntradas(aux);
+  92  239  		for (aux = 7; aux<10; aux++) dPipocas(aux);
+  93  258  	}
+  94  259  }
