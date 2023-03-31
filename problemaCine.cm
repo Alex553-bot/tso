@@ -1,19 +1,22 @@
 typedef semaphore sem; 
 typedef binarysem binsem; 
-
+const int RA = 1;
 binsem coutt = 1, mutex = 1;
 sem sem_entrada = 0, fila_entradas = 0;
 sem fila_pipocas = 0, sem_pipocas = 0;
 sem aten_pipocas = 0, aten_entradas = 0;
-int global, nro_actual = 1;
+sem aux = 0, llama = 0;
+int global, nro_actual = 0, esp1, esp2;
 
 void cliente(int ID) {
-    int nro_entrada;
+    int nro_entrada, r;
     p(coutt);
      cout<<"Cliente "<<ID<<" llega al cine."<<endl;
     v(coutt);
 
-    // INTERACCION CON DISPENSADOR DE PIPOCAS
+    p(mutex);
+     esp1++;
+    v(mutex);
     p(fila_entradas);
     p(coutt);
      cout<<"Cliente "<<ID<<" pide una entrada."<<endl;
@@ -28,24 +31,24 @@ void cliente(int ID) {
      cout<<"Cliente "<<ID<<" se le asigno la entrada "<<nro_entrada<<endl<<endl;
     v(coutt);
     v(fila_entradas);
-
-    // INTERACCION CON DISPENSADOR DE PIPOCAS
-    p(coutt);
-     cout<<"Cliente "<<ID<<" solicita pipocas."<<endl;
-    v(coutt);
+    
     while (1) {
-        p(mutex);
+        //p(mutex);
          if (nro_actual>=nro_entrada) {
-            v(mutex);
+            //v(mutex);
             break;
          }
-        v(mutex);
+        //v(mutex);
+	r = random(RA);
+	for (r = r; r>0; r--) {}
     }
     p(fila_pipocas);
-    p(coutt);
-     cout<<"Cliente "<<ID<<" muestra el numero de entrada."<<endl;
-    v(coutt);
     v(sem_pipocas);
+    p(llama);
+     p(coutt);
+      cout<<"Cliente "<<ID<<" con entrada "<<nro_entrada<<" solicita pipocas."<<endl;
+     v(coutt);
+    v(aux);
     p(aten_pipocas);
     p(coutt);
      cout<<"Cliente "<<ID<<" toma sus pipocas y se va a su sala."<<endl<<endl;
@@ -53,24 +56,48 @@ void cliente(int ID) {
     v(fila_pipocas);
 }
 void dispensadorEntradas(int ID) {
+    int j, r;
     p(coutt);
      cout<<"Dispensador de entradas "<<ID<<" lista para atender."<<endl;
     v(coutt);
     v(fila_entradas);
     while (1) {
+	p(mutex);
+         if (esp1<=0) {
+	     v(mutex);
+  	     r = random(RA);
+	     //for (r = r; r>0; r--) {}
+	     continue;
+	 }
+	v(mutex);
         p(sem_entrada);
         p(coutt);
          cout<<"Dispensador de entradas "<<ID<<" atiende al cliente"<<endl;
         v(coutt);
         v(aten_entrada);
+        p(mutex);
+ 	 esp1--;
+     	v(mutex);
     }
 }
 void dispensadorPipocas(int ID) {
+    int r;
     p(coutt);
      cout<<"Dispensador de pipocas "<<ID<<" listo para atender."<<endl;
     v(coutt);
+    p(mutex);
+     if (nro_actual==0) nro_actual++;
+    v(mutex);
     v(fila_pipocas);
     while (1) {
+	p(mutex);
+         if (nro_actual>global) {
+	     v(mutex);
+   	     r = random(RA);
+	     for (r = r; r>0; r--) {}
+	     continue;
+	 }
+	v(mutex);
         p(sem_pipocas);
         p(mutex);
          p(coutt);
@@ -78,19 +105,23 @@ void dispensadorPipocas(int ID) {
          v(coutt);
          nro_actual++; 
         v(mutex);
+  	v(llama);
+        p(aux);
         p(coutt);
          cout<<"Dispensador de pipocas "<<ID<<" prepara pipocas."<<endl;
         v(coutt);
         v(aten_pipocas);
     }
 }
-
 void main() {
-    int i; int a = 4; int b = 6; int n = 8;
     cobegin{
-        for (i = 0; i<a; i++) cliente(i);
-        for (i = a; i<b; i++) dispensadorEntradas(i);
-        for (i = b; i<n; i++) dispensadorPipocas(i);
+        cliente(1); cliente(2); cliente(3); cliente(4);
+	cliente(5); cliente(6); cliente(7); cliente(8);
+	cliente(9); cliente(10); cliente(11); cliente(12);
+	cliente(13); cliente(14); cliente(15); cliente(16);
+        dispensadorEntradas(0); dispensadorEntradas(1); dispensadorEntradas(2);
+	dispensadorEntradas(3); dispensadorEntradas(4);
+	dispensadorPipocas(0); dispensadorPipocas(1); dispensadorPipocas(2);
+	dispensadorPipocas(3); dispensadorPipocas(4);
     }
-
 }
