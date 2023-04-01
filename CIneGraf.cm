@@ -1,0 +1,140 @@
+#include "gdefs.cm"
+
+semaphore DisEntra=0;
+semaphore DisPal=0;
+semaphore Cliente=1;
+
+semaphore habEnt=0;
+semaphore habPal=0;
+semaphore habilitado=1;
+
+semaphore termina=0;
+semaphore termina2=0;
+
+int totalClientes;
+int totalDisEntra;
+int totalDisPal;
+
+int i=1;  int saveDisEntra=1;
+int j=0;  int saveDisPal=0;
+int k=0;
+
+int linea1=-1;  int linea3=-3;
+int linea2=-2;	int linea4=-4;
+
+
+void cliente(int ID){
+
+	create(ID, RECTANGLE, RED, 10, (ID-1)*40,  30, 30);   wait(Cliente);
+	wait(habilitado);
+	cout<<'\n'<<" Cliente "<<ID<<" llega y solicita una entrada "<<'\n';
+	
+	signal(habilitado);	
+	signal(DisEntra);
+	
+	wait(habEnt);
+	changecolor(ID, GREEN);	
+	moveto(ID, 130, saveDisEntra);
+
+	wait(habilitado);
+	changecolor(ID, YELLOW);
+	changecolor((saveDisEntra/40)+31,RED);
+	cout<<'\n'<<" Cliente "<<ID<<" tiene su entrada "<<'\n';
+	moveto(ID, 260, (ID-1)*40);
+	
+	signal(termina);
+	signal(habilitado);
+	
+	changecolor(ID, RED);
+	wait(habilitado);
+	cout<<'\n'<<" Cliente "<<ID<<" llega y solicita palomitas "<<'\n';
+	
+	signal(DisPal);
+	signal(habilitado);
+	
+	wait(habPal);
+	changecolor(ID, GREEN);
+	moveto(ID, 390, saveDisPal);
+	changecolor(ID, YELLOW);
+	wait(habilitado);
+	
+	cout<<'\n'<<" <---Cliente "<<ID<<" e ingresa al cine ------------"<<'\n';
+	cout<<endl;
+	changecolor((saveDisPal/40)+41,RED);
+	moveto(ID, 540, (ID-1)*40); changecolor(ID, BLUE);
+	
+	signal(termina2);
+	signal(habilitado);
+}
+
+void dispEntra(int ID){
+	
+	while(j<totalClientes){	
+		create(ID, RECTANGLE, RED, 200, (ID-31)*40,  10, 30);	wait(DisEntra);
+		saveDisEntra=(ID-31)*40;
+		if(j<totalClientes){
+			
+			wait(habilitado);
+			changecolor(ID, GREEN);
+			cout<<'\n'<<"			Dispensador de entradas "<<ID<<" vende la entrada  "<<i<<'\n'; i++;
+			
+		        j++;
+			signal(habEnt);
+			signal(habilitado);
+			signal(Cliente);
+			wait(termina);
+		}else{
+			j++;
+		}
+	}
+	signal(DisEntra);
+	changecolor(ID, RED);
+	
+}
+
+void dispPalo(int ID){
+	
+	while(k<totalClientes){
+		create(ID, RECTANGLE, RED, 450, (ID-41)*40,  10, 30);  wait(DisPal);
+		if(k<totalClientes){
+			wait(habilitado);
+			saveDisPal=(ID-41)*40;
+			changecolor(ID, GREEN);
+			cout<<'\n'<<"			Dispensador de palomitas "<<ID<<" vende palomitas a -->"<<'\n';
+			k++;
+			signal(habPal);
+			signal(habilitado);
+			wait(termina2);
+		}else{
+			k++;
+		}
+	}
+	signal(DisPal);
+	changecolor(ID, RED);
+}
+
+
+void aument(){
+	int i=1;
+	while(i<totalDisEntra){
+	signal(Cliente);
+	i++;
+	}
+}
+
+
+main(){
+	totalClientes=10;
+	totalDisEntra=7;
+	//aument();
+	create(linea1, LINE, BLACK, 170,10,170,400);
+	create(linea2, LINE, BLACK, 220,10,220,400);
+	create(linea3, LINE, BLACK, 440,10,440,400);
+	create(linea4, LINE, BLACK, 480,10,480,400);
+	cobegin{
+		
+		cliente(1);cliente(2);cliente(3);cliente(4);cliente(5);cliente(6);cliente(7);cliente(8);cliente(9);cliente(10);
+		dispEntra(31);dispEntra(32);dispEntra(33);dispEntra(34);dispEntra(35);dispEntra(36);dispEntra(37);
+		dispPalo(41);//dispPalo(42);dispPalo(43);//dispPalo(44);dispPalo(45);dispPalo(46);dispPalo(47);
+	}
+}
