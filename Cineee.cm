@@ -1,0 +1,98 @@
+semaphore DisEntra=0;
+semaphore DisPal=0;
+semaphore Cliente=1;
+
+semaphore habEnt=0;
+semaphore habPal=0;
+semaphore habilitado=1;
+
+int totalClientes;
+int totalDisEntra;
+int totalDisPal;
+
+int i=1;
+int j=0;
+int k=0;
+
+void cliente(int ID){
+
+	wait(Cliente);
+	wait(habilitado);
+	cout<<'\n'<<" Cliente "<<ID<<" llega y solicita una entrada "<<'\n';
+	signal(habilitado);
+	
+	signal(DisEntra);
+	wait(habEnt);
+
+	wait(habilitado);
+	cout<<'\n'<<" Cliente "<<ID<<" tiene su entrada "<<'\n';
+	signal(habilitado);
+
+	wait(habilitado);
+	cout<<'\n'<<" Cliente "<<ID<<" llega y solicita palomitas "<<'\n';
+
+	signal(DisPal);
+	signal(habilitado);
+	wait(habPal);
+	wait(habilitado);
+	cout<<'\n'<<" <---Cliente "<<ID<<" e ingresa al cine ------------"<<'\n';
+	cout<<endl;
+	signal(habilitado);
+	
+}
+
+void dispEntra(int ID){
+
+	while(j<totalClientes){
+		wait(DisEntra);
+		if(j<totalCliente){
+			wait(habilitado);
+			j++;
+			cout<<'\n'<<"			Dispensador de entradas "<<ID<<" vende la entrada  "<<i<<'\n'; i++;
+			signal(habEnt);
+			signal(habilitado);
+			signal(Cliente);
+		}else{
+			j++;
+		}
+	}
+	signal(DisEntra);
+}
+
+void dispPalo(int ID){
+	
+	while(k<totalClientes){
+		wait(DisPal);
+		if(k<totalCliente){
+			wait(habilitado);
+			k++;
+			cout<<'\n'<<"			Dispensador de palomitas "<<ID<<" vende palomitas a -->"<<'\n';
+			signal(habPal);
+			signal(habilitado);
+		}else{
+			k++;
+		}
+	}
+	signal(DisPal);
+}
+
+void aument(){
+	int i=1;
+	while(i<totalDisEntra){
+	signal(Cliente);
+	i++;
+	}
+}
+
+main(){
+	totalClientes=5;
+	totalDisEntra=3;
+	totalDisPal=3;
+	//aument();
+	cobegin{
+		
+		cliente(1);cliente(2);cliente(3);cliente(4);cliente(5);//cliente(6);cliente(7);cliente(8);cliente(9);cliente(10);
+		dispEntra(1);dispEntra(2);dispEntra(3);//dispEntra(4);dispEntra(5);dispEntra(6);dispEntra(7);
+		dispPalo(1);dispPalo(2);dispPalo(3);//dispPalo(4);dispPalo(5);dispPalo(6);dispPalo(7);
+	}
+}
